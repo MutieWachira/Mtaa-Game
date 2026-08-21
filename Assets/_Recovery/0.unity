@@ -699,7 +699,7 @@ GameObject:
   - component: {fileID: 1886916023}
   m_Layer: 0
   m_Name: CameraTarget
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -825,7 +825,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   target: {fileID: 1886916023}
-  inputReader: {fileID: 1834994030}
+  inputReader: {fileID: 0}
   distance: 5
   sensitivity: 2
   minVerticalAngle: -30

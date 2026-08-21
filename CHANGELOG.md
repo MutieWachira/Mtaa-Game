@@ -41,3 +41,29 @@
 - No jumping.
 - No Android touch controls.
 - Temporary capsule used instead of final character.
+
+## [0.3.0] - 2026-08-21
+
+### Added
+- Third-person camera controller.
+- Camera target system.
+- Camera orbit.
+- Camera smoothing.
+- Camera pitch limits.
+- Camera collision detection.
+- Camera-relative player movement.
+- Smooth player rotation.
+
+### Testing
+- Camera orbit tested.
+- Camera-relative movement tested.
+- Diagonal movement tested.
+- Camera collision tested.
+- Vertical camera limits tested.
+
+### Known Issues
+- Camera still uses temporary legacy mouse input.
+- No player animation.
+- No jumping.
+- No Android camera controls.
+- Temporary capsule character.

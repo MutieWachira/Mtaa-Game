@@ -11,6 +11,14 @@ public sealed class PlayerMovement : MonoBehaviour
     [SerializeField]
     private float moveSpeed = 5f;
 
+    [Header("Camera")]
+    [SerializeField]
+    private Transform cameraTransform;
+
+    [Header("Rotation")]
+    [SerializeField]
+    private float rotationSpeed = 10f;
+
     [SerializeField]
     private float gravity = -20f;
 
@@ -35,20 +43,38 @@ public sealed class PlayerMovement : MonoBehaviour
     {
         Vector2 input = _inputReader.MoveInput;
 
-        Vector3 movement = new Vector3(
-            input.x,
-            0f,
-            input.y
-        );
+       if (input.sqrMagnitude <= 0.001f)
+       {
+        return;
+       }
+       Vector3 cameraForward = cameraTransform.forward;
+       Vector3 cameraRight = cameraTransform.right;
 
-        if (movement.sqrMagnitude > 1f)
+          cameraForward.y = 0f;
+          cameraRight.y = 0f;
+    
+          cameraForward.Normalize();
+          cameraRight.Normalize();
+    
+          Vector3 moveDirection = cameraForward * input.y + cameraRight * input.x;
+          
+          if(moveDirection.sqrMagnitude > 1f)
+          {
+            moveDirection.Normalize();
+          }
+
+          if(moveDirection.sqrMagnitude > 0.001f)
         {
-            movement.Normalize();
-        }
-
-        _characterController.Move(
-            movement * moveSpeed * Time.deltaTime
-        );
+            Quaternion targetRotation = Quaternion.LookRotation(moveDirection);
+            transform.rotation = Quaternion.Slerp(
+                transform.rotation,
+                targetRotation,
+                rotationSpeed* Time.deltaTime
+            );
+        }            
+          _characterController.Move(
+                moveDirection * moveSpeed * Time.deltaTime
+          );
     }
 
     private void ApplyGravity()
