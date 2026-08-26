@@ -101,3 +101,38 @@
 - Animator is not connected to a character model yet.
 - Android controls not implemented.
 - Camera settings need further tuning.
+
+## [0.6.0] - 2026-08-22
+
+### Added
+- First Mtaa playable block.
+- Environment scene structure.
+- Road intersection.
+- Prototype buildings.
+- Shop landmark.
+- Player spawn point.
+- Initial lighting.
+- Environment layers.
+- Gameplay/debug scene organization.
+
+### Architecture
+- Separated environment and gameplay objects.
+- Introduced world scene organization.
+- Added dedicated player spawn marker.
+- Established greybox level-design workflow.
+
+### Testing
+- Player movement tested within city block.
+- Camera tested around buildings.
+- Road traversal tested.
+- Player scale tested against environment.
+
+### Known Issues
+- Prototype geometry only.
+- No NPCs.
+- No traffic.
+- No interactions.
+- No missions.
+- No economy.
+- No final materials.
+- No navigation system.
