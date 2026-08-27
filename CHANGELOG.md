@@ -136,3 +136,46 @@
 - No economy.
 - No final materials.
 - No navigation system.
+
+## [0.7.0] - 2026-08-27
+
+### Added
+- AI Navigation integration.
+- NavMesh-based NPC movement.
+- NPC state system.
+- NPC movement state system.
+- Civilian NPC prefab.
+- NPC spawning system.
+- Configurable NPC spawn points.
+- Spawn position validation.
+- Basic NPC roaming behaviour.
+- NPC state tests.
+- Initial NPC debug visualization.
+
+### Architecture
+- Separated NPC decision-making from movement.
+- Separated NPC movement from animation.
+- NPC navigation uses NavMeshAgent.
+- Player continues using CharacterController.
+- NPC spawning centralized through NPCSpawner.
+
+### Performance
+- NPC population is capped through configurable maximum count.
+- Spawn positions are validated before instantiation.
+- Expensive scene-wide object searches are avoided.
+
+### Testing
+- Navigation mesh tested.
+- NPC spawning tested.
+- NPC pathfinding tested.
+- Destination arrival tested.
+- NPC state tests passing.
+
+### Known Issues
+- NPC behaviour is currently simple roaming.
+- NPC schedules not implemented.
+- NPC needs system not implemented.
+- NPC relationships not implemented.
+- Traffic not implemented.
+- NPC simulation LOD not implemented.
+- NPC animation needs final integration.
