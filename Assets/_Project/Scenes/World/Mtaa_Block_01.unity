@@ -458,10 +458,14 @@ PrefabInstance:
     - target: {fileID: 1194117515923509411, guid: dc34e05c03e8aeed0bb696cbc8c2c958, type: 3}
       propertyPath: cameraTransform
       value: 
-      objectReference: {fileID: 1854435141}
+      objectReference: {fileID: 874096246}
+    - target: {fileID: 1194117515923509411, guid: dc34e05c03e8aeed0bb696cbc8c2c958, type: 3}
+      propertyPath: thirdPersonCamera
+      value: 
+      objectReference: {fileID: 1854435143}
     - target: {fileID: 5498493092094957115, guid: dc34e05c03e8aeed0bb696cbc8c2c958, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 45.582798
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5498493092094957115, guid: dc34e05c03e8aeed0bb696cbc8c2c958, type: 3}
       propertyPath: m_LocalPosition.y
@@ -469,7 +473,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5498493092094957115, guid: dc34e05c03e8aeed0bb696cbc8c2c958, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -8
+      value: -5
       objectReference: {fileID: 0}
     - target: {fileID: 5498493092094957115, guid: dc34e05c03e8aeed0bb696cbc8c2c958, type: 3}
       propertyPath: m_LocalRotation.w
@@ -1661,7 +1665,8 @@ GameObject:
   - component: {fileID: 1854435141}
   - component: {fileID: 1854435140}
   - component: {fileID: 1854435139}
-  - component: {fileID: 1854435142}
+  - component: {fileID: 1854435144}
+  - component: {fileID: 1854435143}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -1737,13 +1742,13 @@ Transform:
   m_GameObject: {fileID: 1854435138}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -10}
+  m_LocalPosition: {x: 6.5, y: 1, z: -5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1854435142
+--- !u!114 &1854435143
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1752,21 +1757,38 @@ MonoBehaviour:
   m_GameObject: {fileID: 1854435138}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4f9d5158004a53658ac54fa58ba23e14, type: 3}
+  m_Script: {fileID: 11500000, guid: f0303b417e92060e29f239e43808fbf0, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CameraController
+  m_EditorClassIdentifier: Assembly-CSharp::ThirdPersonCamera
   target: {fileID: 874096246}
-  inputReader: {fileID: 874096245}
-  distance: 5
-  sensitivity: 2
-  minVerticalAngle: -30
-  maxVerticalAngle: 70
+  heightOffset: 0
+  cameraDistance: 4.5
+  shoulderOffset: 0.5
+  horizonLookAhead: 2
+  mouseSensitivity: 15
+  gamepadSensitivity: 45
+  minPitch: -30
+  maxPitch: 70
+  enableAutoCenter: 1
+  autoCenterDelay: 2
+  autoCenterSpeed: 4
+  lockOnTarget: {fileID: 0}
+  lockOnPitch: 15
   positionSmoothTime: 0.08
-  collisionLayers:
-    serializedVersion: 2
-    m_Bits: 8
-  collisionRadius: 0.2
-  minimumDistance: 1
+  rotationSmoothSpeed: 15
+  inputReader: {fileID: 874096245}
+--- !u!114 &1854435144
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1854435138}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd29a9b803efeaa14981878f8fc35d4d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputReader
 --- !u!1 &1969691340
 GameObject:
   m_ObjectHideFlags: 0

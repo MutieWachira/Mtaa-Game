@@ -1,206 +1,183 @@
 using UnityEngine;
 
-/// <summary>
-/// Handles player locomotion using input supplied by PlayerInputReader.
-/// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(PlayerInputReader))]
 public sealed class PlayerMovement : MonoBehaviour
 {
-    [Header("Movement")]
-    [SerializeField]
-    private float walkSpeed = 3f;
+    [Header("Locomotion Speeds")]
+    [SerializeField] private float walkSpeed = 2.5f;
+    [SerializeField] private float jogSpeed = 4.5f;
+    [SerializeField] private float sprintSpeed = 6.5f;
 
-    [SerializeField]
-    private float runSpeed = 6f;
+    [Header("Momentum & Weight")]
+    [SerializeField] private float accelerationSpeed = 8.0f; 
+    [SerializeField] private float decelerationSpeed = 12.0f; 
 
-    [Header("Jump")]
-    [SerializeField]
-    private float jumpHeight = 1.5f;
+    [Header("Dynamic AAA Turning")]
+    [SerializeField] private float baseRotationSpeed = 12.0f;
+    [SerializeField] private float tightTurnThreshold = 110f; 
 
-    [Header("Rotation")]
-    [SerializeField]
-    private float rotationSpeed = 10f;
+    [Header("Advanced Grounding")]
+    [SerializeField] private LayerMask groundLayers;
+    [SerializeField] private float groundCheckOffset = 0.1f;
+    [SerializeField] private float groundCheckRadius = 0.28f;
 
-    [Header("Camera")]
-    [SerializeField]
-    private Transform cameraTransform;
-
-    [Header("Gravity")]
-    [SerializeField]
-    private float gravity = -20f;
+    [Header("Jump & Environment")]
+    [SerializeField] private float jumpHeight = 1.6f;
+    [SerializeField] private float gravity = -22.0f;
+    
+    // FIX: Change Transform reference directly to your custom camera component
+    [Header("Camera Reference Link")]
+    [SerializeField] private ThirdPersonCamera thirdPersonCamera;
 
     private CharacterController _characterController;
     private PlayerInputReader _inputReader;
 
+    private Vector3 _currentInputVector;
+    private Vector3 _targetInputVector;
+    private Vector3 _horizontalVelocity;
     private float _verticalVelocity;
+    private bool _isGroundedCleanly;
 
-    /// <summary>
-    /// Gets the player's current movement state.
-    /// </summary>
     public MovementState CurrentState { get; private set; }
-    private MovementState _previousState;
+    public float CurrentRelativeForwardSpeed => _horizontalVelocity.magnitude;
 
     private void Awake()
     {
-        _characterController =
-            GetComponent<CharacterController>();
-
-        _inputReader =
-            GetComponent<PlayerInputReader>();
+        _characterController = GetComponent<CharacterController>();
+        _inputReader = GetComponent<PlayerInputReader>();
     }
 
     private void Update()
     {
-        Vector3 movement = CalculateMovementDirection();
-
-        UpdateMovementState(movement);
-
-        HandleMovement(movement);
-
+        EvaluateCustomGroundCheck();
+        
+        Vector3 movementDirection = CalculateSmoothInputDirection();
+        
+        ApplyAAAMomentum(movementDirection);
         HandleJump();
-
         ApplyGravity();
 
-        Debug.Log(CurrentState);
+        Vector3 finalizedLocomotionFrame = (_horizontalVelocity + (Vector3.up * _verticalVelocity)) * Time.deltaTime;
+        _characterController.Move(finalizedLocomotionFrame);
+
+        RotateTowardsMovement(movementDirection);
+        UpdateMovementState(movementDirection);
     }
 
-    private Vector3 CalculateMovementDirection()
+    private void EvaluateCustomGroundCheck()
     {
-        Vector2 input = _inputReader.MoveInput;
-
-        if (input.sqrMagnitude <= 0.001f)
-        {
-            return Vector3.zero;
-        }
-
-        Vector3 cameraForward =
-            cameraTransform.forward;
-
-        Vector3 cameraRight =
-            cameraTransform.right;
-
-        cameraForward.y = 0f;
-        cameraRight.y = 0f;
-
-        cameraForward.Normalize();
-        cameraRight.Normalize();
-
-        Vector3 movement =
-            cameraForward * input.y +
-            cameraRight * input.x;
-
-        if (movement.sqrMagnitude > 1f)
-        {
-            movement.Normalize();
-        }
-
-        return movement;
+        Vector3 spherePosition = new Vector3(transform.position.x, transform.position.y + groundCheckRadius - groundCheckOffset, transform.position.z);
+        _isGroundedCleanly = Physics.CheckSphere(spherePosition, groundCheckRadius, groundLayers, QueryTriggerInteraction.Ignore);
     }
 
-    private void HandleMovement(Vector3 movement)
+    private Vector3 CalculateSmoothInputDirection()
     {
-        if (movement.sqrMagnitude <= 0.001f)
+        Vector2 rawInput = _inputReader.MoveInput;
+        _targetInputVector = new Vector3(rawInput.x, 0f, rawInput.y);
+
+        float currentInterpolationRate = _targetInputVector.sqrMagnitude > 0.001f ? accelerationSpeed : decelerationSpeed;
+        _currentInputVector = Vector3.MoveTowards(_currentInputVector, _targetInputVector, currentInterpolationRate * Time.deltaTime);
+
+        if (_currentInputVector.sqrMagnitude <= 0.001f) return Vector3.zero;
+
+        // FIX: Extract stable, independent directional references based on pure angles
+        // This stops the camera position from affecting calculation matrices on the same frame.
+        float targetCameraAngle = thirdPersonCamera != null ? thirdPersonCamera.CameraYaw : 0f;
+        Quaternion cameraRotationSnapshot = Quaternion.Euler(0f, targetCameraAngle, 0f);
+
+        Vector3 cameraForwardFlat = cameraRotationSnapshot * Vector3.forward;
+        Vector3 cameraRightFlat = cameraRotationSnapshot * Vector3.right;
+
+        Vector3 finalDirection = (cameraForwardFlat * _currentInputVector.z) + (cameraRightFlat * _currentInputVector.x);
+        
+        return finalDirection.sqrMagnitude > 1f ? finalDirection.normalized : finalDirection;
+    }
+
+    private void ApplyAAAMomentum(Vector3 movementDirection)
+    {
+        if (movementDirection.sqrMagnitude <= 0.001f)
         {
+            _horizontalVelocity = Vector3.MoveTowards(_horizontalVelocity, Vector3.zero, decelerationSpeed * Time.deltaTime);
             return;
         }
 
-        float currentSpeed =
-            _inputReader.SprintInput
-                ? runSpeed
-                : walkSpeed;
+        float targetMaxSpeed = walkSpeed;
+        if (_inputReader.SprintInput)
+        {
+            targetMaxSpeed = sprintSpeed;
+        }
+        else if (_targetInputVector.magnitude > 0.7f)
+        {
+            targetMaxSpeed = jogSpeed;
+        }
 
-        RotateTowardsMovement(movement);
-
-        _characterController.Move(
-            movement *
-            currentSpeed *
-            Time.deltaTime
-        );
+        Vector3 idealVelocity = movementDirection * targetMaxSpeed;
+        _horizontalVelocity = Vector3.MoveTowards(_horizontalVelocity, idealVelocity, accelerationSpeed * Time.deltaTime);
     }
 
-    private void RotateTowardsMovement(
-        Vector3 movement)
+    private void RotateTowardsMovement(Vector3 movementDirection)
     {
-        Quaternion targetRotation =
-            Quaternion.LookRotation(movement);
+        if (movementDirection.sqrMagnitude <= 0.001f) return;
 
-        transform.rotation =
-            Quaternion.Slerp(
-                transform.rotation,
-                targetRotation,
-                rotationSpeed *
-                Time.deltaTime
-            );
+        float targetCameraAngle = thirdPersonCamera != null ? thirdPersonCamera.CameraYaw : 0f;
+        Quaternion cameraRotationSnapshot = Quaternion.Euler(0f, targetCameraAngle, 0f);
+        
+        Vector3 rawTargetDir = (cameraRotationSnapshot * Vector3.forward * _targetInputVector.z) + (cameraRotationSnapshot * Vector3.right * _targetInputVector.x);
+        if (rawTargetDir.sqrMagnitude <= 0.001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(rawTargetDir.normalized);
+        float angleDifference = Vector3.Angle(transform.forward, rawTargetDir.normalized);
+        
+        float currentRotationSpeed = baseRotationSpeed;
+        if (angleDifference > tightTurnThreshold)
+        {
+            // Slow down the turn speed during rapid u-turns so the player runs in a realistic arc
+            currentRotationSpeed *= 0.35f; 
+        }
+
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, currentRotationSpeed * Time.deltaTime);
+    }
+
+    private void HandleJump()
+    {
+        if (!_isGroundedCleanly) return;
+        if (!_inputReader.JumpPressed) return;
+
+        _verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
 
     private void ApplyGravity()
     {
-        if (_characterController.isGrounded &&
-            _verticalVelocity < 0f)
+        if (_isGroundedCleanly && _verticalVelocity < 0f)
         {
-            _verticalVelocity = -2f;
+            _verticalVelocity = -2f; 
+            return;
         }
 
-        _verticalVelocity +=
-            gravity * Time.deltaTime;
-
-        Vector3 verticalMovement =
-            Vector3.up * _verticalVelocity;
-
-        _characterController.Move(
-            verticalMovement *
-            Time.deltaTime
-        );
+        _verticalVelocity += gravity * Time.deltaTime;
     }
 
-   private void UpdateMovementState(
-    Vector3 movement)
-{
-    MovementState newState;
+    private void UpdateMovementState(Vector3 movementDirection)
+    {
+        MovementState newState;
 
-    if (!_characterController.isGrounded)
-    {
-        newState =
-            _verticalVelocity > 0f
-                ? MovementState.Jumping
-                : MovementState.Falling;
-    }
-    else if (movement.sqrMagnitude <= 0.001f)
-    {
-        newState = MovementState.Idle;
-    }
-    else
-    {
-        newState =
-            _inputReader.SprintInput
-                ? MovementState.Running
-                : MovementState.Walking;
-    }
-
-    if (newState != CurrentState)
-    {
-        _previousState = CurrentState;
+        if (!_isGroundedCleanly)
+        {
+            newState = _verticalVelocity > 0f ? MovementState.Jumping : MovementState.Falling;
+        }
+        else if (_horizontalVelocity.sqrMagnitude <= 0.1f)
+        {
+            newState = MovementState.Idle;
+        }
+        else
+        {
+            float speed = _horizontalVelocity.magnitude;
+            if (speed > jogSpeed + 0.5f) newState = MovementState.Running;
+            else if (speed > walkSpeed + 0.2f) newState = MovementState.Walking; 
+            else newState = MovementState.Walking;
+        }
 
         CurrentState = newState;
-
-        Debug.Log(
-            $"[PlayerMovement] " +
-            $"{_previousState} -> {CurrentState}"
-        );
-    }
-}
-
-    private void HandleJump()
-    {
-        if(!_characterController.isGrounded)
-        {
-            return;
-        }
-        if (!_inputReader.JumpPressed)
-        {
-            return;
-        }
-        _verticalVelocity = Mathf.Sqrt(jumpHeight * -2f * gravity);
     }
 }

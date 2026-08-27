@@ -179,3 +179,7 @@
 - Traffic not implemented.
 - NPC simulation LOD not implemented.
 - NPC animation needs final integration.
+
+## [0.7.0] - 2026-08-27
+## Fixed
+- Debugged player movement and camera to replicate a Triple A game.
